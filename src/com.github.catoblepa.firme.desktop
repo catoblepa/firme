@@ -1,0 +1,7 @@
+[Desktop Entry]
+Name=Firme
+Exec=/app/main.py %F
+Icon=org.gnome.Firme
+Type=Application
+Categories=Utility;
+StartupWMClass=Firme

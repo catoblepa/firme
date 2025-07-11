@@ -1,0 +1,19 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Flatpak build artifacts
+build-dir/
+.flatpak-builder/
+*.flatpak
+
+# OS/Editor files
+.DS_Store
+Thumbs.db
+
+# Backup files
+*~
+*.swp
+*.bak

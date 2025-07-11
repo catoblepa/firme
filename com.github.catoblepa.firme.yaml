@@ -1,0 +1,37 @@
+app-id: com.github.catoblepa.firme
+runtime: org.gnome.Platform
+runtime-version: '48'
+sdk: org.gnome.Sdk
+command: /app/main.py
+finish-args:
+  - --share=network
+  - --filesystem=host
+  - --socket=x11
+  - --socket=wayland
+  - --device=dri
+  - --env=GDK_BACKEND=x11,wayland
+modules:
+  - name: asn1crypto
+    buildsystem: simple
+    build-commands:
+      - python3 setup.py install --prefix=/app
+    sources:
+      - type: archive
+        url: https://files.pythonhosted.org/packages/source/a/asn1crypto/asn1crypto-1.5.1.tar.gz
+        sha256: 13ae38502be632115abf8a24cbe5f4da52e3b5231990aff31123c805306ccb9c
+  - name: app
+    buildsystem: simple
+    build-commands:
+      - install -Dm755 main.py /app/main.py
+      - install -Dm644 signers.py /app/signers.py
+      - install -Dm644 com.github.catoblepa.firme.svg /app/share/icons/hicolor/scalable/apps/com.github.catoblepa.firme.svg
+      - install -Dm644 com.github.catoblepa.firme.desktop /app/share/applications/com.github.catoblepa.firme.desktop
+    sources:
+      - type: file
+        path: src/main.py
+      - type: file
+        path: src/signers.py
+      - type: file
+        path: src/com.github.catoblepa.firme.svg
+      - type: file
+        path: src/com.github.catoblepa.firme.desktop
