@@ -12,7 +12,7 @@ import tempfile
 import io
 import contextlib
 
-from signers import analizza_busta
+from estrai_firme import analizza_busta
 
 class FirmeApp(Gtk.Application):
     def __init__(self):
@@ -34,7 +34,7 @@ class FirmeWindow(Gtk.ApplicationWindow):
     def __init__(self, app, file_p7m=None):
         super().__init__(application=app)
         self.set_title("Verifica Firme Digitali")
-        self.set_icon_name("org.gnome.Firme")
+        self.set_icon_name("com.github.catoblepa.firme")
         self.file_estratto = None
         self.tempdir = None
         self.file_verificato = False

@@ -1,7 +1,7 @@
 [Desktop Entry]
 Name=Firme
-Exec=/app/main.py %F
-Icon=org.gnome.Firme
+Exec=firme.py %F
+Icon=com.github.catoblepa.firme
 Type=Application
 Categories=Utility;
 StartupWMClass=Firme

@@ -2,7 +2,7 @@ app-id: com.github.catoblepa.firme
 runtime: org.gnome.Platform
 runtime-version: '48'
 sdk: org.gnome.Sdk
-command: /app/main.py
+command: firme.py
 finish-args:
   - --share=network
   - --filesystem=host
@@ -22,15 +22,15 @@ modules:
   - name: app
     buildsystem: simple
     build-commands:
-      - install -Dm755 main.py /app/main.py
-      - install -Dm644 signers.py /app/signers.py
+      - install -Dm755 firme.py /app/bin/firme.py
+      - install -Dm644 estrai_firme.py /app/bin/estrai_firme.py
       - install -Dm644 com.github.catoblepa.firme.svg /app/share/icons/hicolor/scalable/apps/com.github.catoblepa.firme.svg
       - install -Dm644 com.github.catoblepa.firme.desktop /app/share/applications/com.github.catoblepa.firme.desktop
     sources:
       - type: file
-        path: src/main.py
+        path: src/firme.py
       - type: file
-        path: src/signers.py
+        path: src/estrai_firme.py
       - type: file
         path: src/com.github.catoblepa.firme.svg
       - type: file

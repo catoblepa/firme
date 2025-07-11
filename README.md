@@ -32,7 +32,7 @@
 Per installare l’applicazione in ambiente isolato tramite Flatpak:
 
 ```bash
-flatpak-builder --user --install --force-clean build-dir it.gnome.Firme.yaml
+flatpak-builder --user --install --force-clean build-dir com.github.catoblepa.firme.yaml
 ```
 
 ## Licenza
