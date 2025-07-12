@@ -14,18 +14,27 @@ import contextlib
 
 from estrai_firme import analizza_busta
 
+DEBUG = True  # Imposta a False per disabilitare i messaggi di debug
+
+def debug_print(*args, **kwargs):
+    if DEBUG:
+        print(*args, **kwargs)
+
 class FirmeApp(Gtk.Application):
     def __init__(self):
         super().__init__(
             application_id="com.github.catoblepa.firme",
             flags=Gio.ApplicationFlags.HANDLES_OPEN
         )
+        debug_print("[DEBUG] Applicazione inizializzata")
         
     def do_activate(self):
+        debug_print("[DEBUG] do_activate chiamato")
         win = FirmeWindow(self)
         win.present()
 
     def do_open(self, files, n_files, hint):
+        debug_print(f"[DEBUG] do_open chiamato con {n_files} file")
         file_path = files[0].get_path() if n_files > 0 else None
         win = FirmeWindow(self, file_path)
         win.present()
@@ -33,6 +42,7 @@ class FirmeApp(Gtk.Application):
 class FirmeWindow(Gtk.ApplicationWindow):
     def __init__(self, app, file_p7m=None):
         super().__init__(application=app)
+        debug_print("[DEBUG] Creazione finestra principale")
         self.set_title("Verifica Firme Digitali")
         self.set_icon_name("com.github.catoblepa.firme")
         self.file_estratto = None
@@ -110,9 +120,11 @@ class FirmeWindow(Gtk.ApplicationWindow):
         self.aggiorna_ui()
 
         if file_p7m:
+            debug_print(f"[DEBUG] File passato all'avvio: {file_p7m}")
             self.verifica_firma(file_p7m)
 
     def aggiorna_ui(self):
+        debug_print(f"[DEBUG] aggiorna_ui chiamato, file_verificato={self.file_verificato}")
         for child in list(self.vbox):
             self.vbox.remove(child)
         if not self.file_verificato:
@@ -125,6 +137,7 @@ class FirmeWindow(Gtk.ApplicationWindow):
             self.vbox.append(self.scrolled)
 
     def on_file_chooser_clicked(self, widget):
+        debug_print("[DEBUG] Pulsante 'Apri' cliccato, apro file dialog")
         file_dialog = Gtk.FileDialog()
         filters = Gio.ListStore.new(Gtk.FileFilter)
         filter_p7m = Gtk.FileFilter()
@@ -138,19 +151,23 @@ class FirmeWindow(Gtk.ApplicationWindow):
                 file = dialog.open_finish(result)
                 if file:
                     file_p7m = file.get_path()
+                    debug_print(f"[DEBUG] File selezionato: {file_p7m}")
                     self.pulisci_sezioni()
                     self.verifica_firma(file_p7m)
             except GLib.Error as e:
+                debug_print(f"[DEBUG] Errore apertura file: {e}")
                 self.file_verificato = False
                 self.aggiorna_ui()
 
         file_dialog.open(self, None, on_file_selected)
 
     def pulisci_sezioni(self):
+        debug_print("[DEBUG] pulisci_sezioni chiamato")
         self.label_info_file.set_markup('<span size="medium" color="#444444">Nessun file selezionato.</span>')
         self.elenco_firme_buffer.set_text("")
 
     def verifica_firma(self, file_p7m):
+        debug_print(f"[DEBUG] verifica_firma chiamato con file: {file_p7m}")
         self.pulisci_sezioni()
         self.btn_apri_estratto.set_sensitive(False)
         self.file_estratto = None
@@ -159,14 +176,17 @@ class FirmeWindow(Gtk.ApplicationWindow):
 
         # Crea una directory temporanea
         if self.tempdir:
+            debug_print("[DEBUG] Pulizia directory temporanea precedente")
             self.tempdir.cleanup()
         self.tempdir = tempfile.TemporaryDirectory()
+        debug_print(f"[DEBUG] Creata directory temporanea: {self.tempdir.name}")
 
         # Nome file estratto senza .p7m
         base_name = os.path.basename(file_p7m)
         if base_name.lower().endswith('.p7m'):
             base_name = base_name[:-4]
         file_output = os.path.join(self.tempdir.name, base_name)
+        debug_print(f"[DEBUG] File estratto sarà: {file_output}")
 
         cmd = [
             "openssl", "smime", "-verify",
@@ -179,18 +199,27 @@ class FirmeWindow(Gtk.ApplicationWindow):
         self.label_info_file.set_markup(f'<span size="medium" color="#444444">{file_p7m}</span>')
 
         try:
+            debug_print(f"[DEBUG] Eseguo comando: {' '.join(cmd)}")
             result = subprocess.run(cmd, capture_output=True, text=True)
+            debug_print(f"[DEBUG] Return code: {result.returncode}")
+            debug_print(f"[DEBUG] stdout: {result.stdout}")
+            debug_print(f"[DEBUG] stderr: {result.stderr}")
             if result.returncode == 0:
+                self.file_estratto = file_output
+                debug_print(f"[DEBUG] File estratto impostato a: {self.file_estratto}")
                 self.btn_apri_estratto.set_sensitive(True)
                 self.file_verificato = True
                 self.aggiorna_ui()
                 self.mostra_info_firma(file_p7m)
             else:
                 self.label_info_file.set_markup(f'<span size="medium" color="#cc0000">Errore nella verifica della firma:\n{result.stderr}</span>')
+                debug_print(f"[DEBUG] Errore openssl: {result.stderr}")
         except Exception as e:
             self.label_info_file.set_markup(f'<span size="medium" color="#cc0000">Errore generico: {e}</span>')
+            debug_print(f"[DEBUG] Eccezione in verifica_firma: {e}")
 
     def mostra_info_firma(self, file_p7m):
+        debug_print(f"[DEBUG] mostra_info_firma chiamato per file: {file_p7m}")
         try:
             with open(file_p7m, 'rb') as f:
                 data = f.read()
@@ -209,22 +238,32 @@ class FirmeWindow(Gtk.ApplicationWindow):
                 if in_firme:
                     elenco.append(line)
             self.elenco_firme_buffer.set_text("\n".join(elenco))
+            debug_print(f"[DEBUG] Informazioni firma mostrate per {file_p7m}")
         except Exception as e:
             self.elenco_firme_buffer.set_text(f"Errore info firma: {e}")
+            debug_print(f"[DEBUG] Eccezione in mostra_info_firma: {e}")
 
     def on_apri_estratto_clicked(self, widget):
+        debug_print(f"[DEBUG] Cliccato su 'Apri file estratto'. file_estratto = {self.file_estratto}")
         if self.file_estratto and os.path.exists(self.file_estratto):
             try:
                 if sys.platform.startswith("linux"):
+                    debug_print(f"[DEBUG] Apro file con xdg-open: {self.file_estratto}")
                     subprocess.Popen(["xdg-open", self.file_estratto])
                 elif sys.platform == "darwin":
+                    debug_print(f"[DEBUG] Apro file con open: {self.file_estratto}")
                     subprocess.Popen(["open", self.file_estratto])
                 elif sys.platform == "win32":
+                    debug_print(f"[DEBUG] Apro file con os.startfile: {self.file_estratto}")
                     os.startfile(self.file_estratto)
             except Exception as e:
                 self.label_info_file.set_markup(f'<span size="medium" color="#cc0000">Errore apertura file: {e}</span>')
+                debug_print(f"[DEBUG] Eccezione in on_apri_estratto_clicked: {e}")
+        else:
+            debug_print("[DEBUG] file_estratto non impostato o file non esiste.")
 
 def main():
+    debug_print("[DEBUG] main() chiamato")
     app = FirmeApp()
     app.run(sys.argv)
 
