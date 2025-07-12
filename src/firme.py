@@ -183,8 +183,9 @@ class FirmeWindow(Gtk.ApplicationWindow):
 
         # Nome file estratto senza .p7m
         base_name = os.path.basename(file_p7m)
-        if base_name.lower().endswith('.p7m'):
+        while base_name.lower().endswith('.p7m'):
             base_name = base_name[:-4]
+        base_name = base_name.strip()
         file_output = os.path.join(self.tempdir.name, base_name)
         debug_print(f"[DEBUG] File estratto sarà: {file_output}")
 
@@ -245,22 +246,68 @@ class FirmeWindow(Gtk.ApplicationWindow):
 
     def on_apri_estratto_clicked(self, widget):
         debug_print(f"[DEBUG] Cliccato su 'Apri file estratto'. file_estratto = {self.file_estratto}")
-        if self.file_estratto and os.path.exists(self.file_estratto):
-            try:
-                if sys.platform.startswith("linux"):
-                    debug_print(f"[DEBUG] Apro file con xdg-open: {self.file_estratto}")
-                    subprocess.Popen(["xdg-open", self.file_estratto])
-                elif sys.platform == "darwin":
-                    debug_print(f"[DEBUG] Apro file con open: {self.file_estratto}")
-                    subprocess.Popen(["open", self.file_estratto])
-                elif sys.platform == "win32":
-                    debug_print(f"[DEBUG] Apro file con os.startfile: {self.file_estratto}")
-                    os.startfile(self.file_estratto)
-            except Exception as e:
-                self.label_info_file.set_markup(f'<span size="medium" color="#cc0000">Errore apertura file: {e}</span>')
-                debug_print(f"[DEBUG] Eccezione in on_apri_estratto_clicked: {e}")
+        if self.file_estratto:
+            debug_print(f"[DEBUG] Verifico esistenza file: {self.file_estratto}")
+            if os.path.exists(self.file_estratto):
+                debug_print("[DEBUG] File esiste, verifico tipo MIME")
+                try:
+                    content_type, uncertain = Gio.content_type_guess(self.file_estratto, None)
+                    debug_print(f"[DEBUG] Tipo MIME del file estratto: {content_type}, incerto: {uncertain}")
+                    if content_type and content_type != "application/octet-stream":
+                        uri = GLib.filename_to_uri(self.file_estratto, None)
+                        debug_print(f"[DEBUG] Apro il file con URI: {uri}")
+                        launched = Gio.AppInfo.launch_default_for_uri(uri, None)
+                        if not launched:
+                            debug_print("[DEBUG] Launch default non riuscito, provo con launch_uris")
+                            Gio.AppInfo.launch_uris([uri], None)
+                        debug_print(f"[DEBUG] File aperto con successo: {uri}")
+                    else:
+                        debug_print("[DEBUG] Tipo MIME sconosciuto o generico, non posso aprire con app predefinita")
+                        self.label_info_file.set_markup('<span size="medium" color="#cc0000">Tipo file non riconosciuto, impossibile aprire automaticamente.</span>')
+                except Exception as e:
+                    self.label_info_file.set_markup(f'<span size="medium" color="#cc0000">Errore apertura file: {e}</span>')
+                    debug_print(f"[DEBUG] Eccezione in on_apri_estratto_clicked: {e}")
+            else:
+                debug_print(f"[DEBUG] File NON esiste: {self.file_estratto}")
+                self.label_info_file.set_markup(f'<span size="medium" color="#cc0000">Il file estratto non esiste: {self.file_estratto}</span>')
         else:
-            debug_print("[DEBUG] file_estratto non impostato o file non esiste.")
+            debug_print("[DEBUG] file_estratto non impostato.")
+            self.label_info_file.set_markup('<span size="medium" color="#cc0000">Nessun file estratto da aprire.</span>')
+
+    import subprocess
+
+    def xdg_on_apri_estratto_clicked(self, widget):
+        debug_print(f"[DEBUG] Cliccato su 'Apri file estratto'. file_estratto = {self.file_estratto}")
+        if self.file_estratto:
+            debug_print(f"[DEBUG] Verifico esistenza file: {self.file_estratto}")
+            if os.path.exists(self.file_estratto):
+                debug_print("[DEBUG] File esiste, verifico tipo MIME")
+                try:
+                    content_type, uncertain = Gio.content_type_guess(self.file_estratto, None)
+                    debug_print(f"[DEBUG] Tipo MIME del file estratto: {content_type}, incerto: {uncertain}")
+                    if content_type and content_type != "application/octet-stream":
+                        # Provo ad aprire il file con xdg-open
+                        try:
+                            subprocess.run(["xdg-open", self.file_estratto], check=False)
+                            debug_print(f"[DEBUG] Aperto con xdg-open: {self.file_estratto}")
+                        except Exception as e:
+                            debug_print(f"[DEBUG] Errore aprendo con xdg-open: {e}")
+                            self.label_info_file.set_markup(f'<span size="medium" color="#cc0000">Errore aprendo con xdg-open: {e}</span>')
+                    else:
+                        debug_print("[DEBUG] Tipo MIME sconosciuto o generico, non posso aprire con app predefinita")
+                        self.label_info_file.set_markup('<span size="medium" color="#cc0000">Tipo file non riconosciuto, impossibile aprire automaticamente.</span>')
+                except Exception as e:
+                    self.label_info_file.set_markup(f'<span size="medium" color="#cc0000">Errore apertura file: {e}</span>')
+                    debug_print(f"[DEBUG] Eccezione in on_apri_estratto_clicked: {e}")
+            else:
+                debug_print(f"[DEBUG] File NON esiste: {self.file_estratto}")
+                self.label_info_file.set_markup(f'<span size="medium" color="#cc0000">Il file estratto non esiste: {self.file_estratto}</span>')
+        else:
+            debug_print("[DEBUG] file_estratto non impostato.")
+            self.label_info_file.set_markup('<span size="medium" color="#cc0000">Nessun file estratto da aprire.</span>')
+
+
+
 
 def main():
     debug_print("[DEBUG] main() chiamato")
