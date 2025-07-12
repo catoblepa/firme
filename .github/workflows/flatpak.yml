@@ -11,14 +11,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Install Flatpak and flatpak-builder
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y flatpak flatpak-builder
+
       - name: Build Flatpak
         uses: flatpak/flatpak-github-actions/flatpak-builder@v6
         with:
           manifest-path: com.github.catoblepa.firme.yaml
-          build-dir: flatpak-build
+          bundle: true
 
       - name: Upload Flatpak bundle
         uses: actions/upload-artifact@v4
         with:
           name: firme-flatpak
-          path: flatpak-build/*.flatpak
+          path:
