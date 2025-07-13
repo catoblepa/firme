@@ -227,20 +227,14 @@ class FirmeWindow(Gtk.ApplicationWindow):
         try:
             with open(file_p7m, 'rb') as f:
                 data = f.read()
-            buf = io.StringIO()
-            with contextlib.redirect_stdout(buf):
-                analizza_busta(data)
-            output = buf.getvalue()
-
-            # SEZIONE 3: Elenco firme
-            lines = output.splitlines()
+            firme_info = analizza_busta(data)
             elenco = []
-            in_firme = False
-            for line in lines:
-                if line.strip().startswith("--- Firmatario"):
-                    in_firme = True
-                if in_firme:
-                    elenco.append(line)
+            for info in firme_info:
+                elenco.append(f"--- Firmatario {info.get('firmatario_idx', '?')} (Livello busta {info.get('livello_busta', '?')}) ---")
+                for k, v in info.items():
+                    if k not in ('firmatario_idx', 'livello_busta'):
+                        elenco.append(f"{k}: {v}")
+                elenco.append("")  # riga vuota tra firme
             self.elenco_firme_buffer.set_text("\n".join(elenco))
             debug_print(f"[DEBUG] Informazioni firma mostrate per {file_p7m}")
         except Exception as e:
