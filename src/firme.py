@@ -11,6 +11,7 @@ import sys
 import tempfile
 import io
 import contextlib
+from pathlib import Path
 
 from estrai_firme import analizza_busta
 
@@ -178,11 +179,13 @@ class FirmeWindow(Gtk.ApplicationWindow):
         if self.tempdir:
             debug_print("[DEBUG] Pulizia directory temporanea precedente")
             self.tempdir.cleanup()
+            self.tempdir = None
         self.tempdir = tempfile.TemporaryDirectory()
         debug_print(f"[DEBUG] Creata directory temporanea: {self.tempdir.name}")
 
         # Nome file estratto senza .p7m
-        base_name = os.path.basename(file_p7m)
+        base_path = Path(file_p7m)
+        base_name = base_path.name
         while base_name.lower().endswith('.p7m'):
             base_name = base_name[:-4]
         base_name = base_name.strip()
@@ -274,39 +277,35 @@ class FirmeWindow(Gtk.ApplicationWindow):
             debug_print("[DEBUG] file_estratto non impostato.")
             self.label_info_file.set_markup('<span size="medium" color="#cc0000">Nessun file estratto da aprire.</span>')
 
-    import subprocess
-
-    def xdg_on_apri_estratto_clicked(self, widget):
-        debug_print(f"[DEBUG] Cliccato su 'Apri file estratto'. file_estratto = {self.file_estratto}")
-        if self.file_estratto:
-            debug_print(f"[DEBUG] Verifico esistenza file: {self.file_estratto}")
-            if os.path.exists(self.file_estratto):
-                debug_print("[DEBUG] File esiste, verifico tipo MIME")
-                try:
-                    content_type, uncertain = Gio.content_type_guess(self.file_estratto, None)
-                    debug_print(f"[DEBUG] Tipo MIME del file estratto: {content_type}, incerto: {uncertain}")
-                    if content_type and content_type != "application/octet-stream":
-                        # Provo ad aprire il file con xdg-open
-                        try:
-                            subprocess.run(["xdg-open", self.file_estratto], check=False)
-                            debug_print(f"[DEBUG] Aperto con xdg-open: {self.file_estratto}")
-                        except Exception as e:
-                            debug_print(f"[DEBUG] Errore aprendo con xdg-open: {e}")
-                            self.label_info_file.set_markup(f'<span size="medium" color="#cc0000">Errore aprendo con xdg-open: {e}</span>')
-                    else:
-                        debug_print("[DEBUG] Tipo MIME sconosciuto o generico, non posso aprire con app predefinita")
-                        self.label_info_file.set_markup('<span size="medium" color="#cc0000">Tipo file non riconosciuto, impossibile aprire automaticamente.</span>')
-                except Exception as e:
-                    self.label_info_file.set_markup(f'<span size="medium" color="#cc0000">Errore apertura file: {e}</span>')
-                    debug_print(f"[DEBUG] Eccezione in on_apri_estratto_clicked: {e}")
-            else:
-                debug_print(f"[DEBUG] File NON esiste: {self.file_estratto}")
-                self.label_info_file.set_markup(f'<span size="medium" color="#cc0000">Il file estratto non esiste: {self.file_estratto}</span>')
-        else:
-            debug_print("[DEBUG] file_estratto non impostato.")
-            self.label_info_file.set_markup('<span size="medium" color="#cc0000">Nessun file estratto da aprire.</span>')
-
-
+    # def xdg_on_apri_estratto_clicked(self, widget):
+    #     debug_print(f"[DEBUG] Cliccato su 'Apri file estratto'. file_estratto = {self.file_estratto}")
+    #     if self.file_estratto:
+    #         debug_print(f"[DEBUG] Verifico esistenza file: {self.file_estratto}")
+    #         if os.path.exists(self.file_estratto):
+    #             debug_print("[DEBUG] File esiste, verifico tipo MIME")
+    #             try:
+    #                 content_type, uncertain = Gio.content_type_guess(self.file_estratto, None)
+    #                 debug_print(f"[DEBUG] Tipo MIME del file estratto: {content_type}, incerto: {uncertain}")
+    #                 if content_type and content_type != "application/octet-stream":
+    #                     # Provo ad aprire il file con xdg-open
+    #                     try:
+    #                         subprocess.run(["xdg-open", self.file_estratto], check=False)
+    #                         debug_print(f"[DEBUG] Aperto con xdg-open: {self.file_estratto}")
+    #                     except Exception as e:
+    #                         debug_print(f"[DEBUG] Errore aprendo con xdg-open: {e}")
+    #                         self.label_info_file.set_markup(f'<span size="medium" color="#cc0000">Errore aprendo con xdg-open: {e}</span>')
+    #                 else:
+    #                     debug_print("[DEBUG] Tipo MIME sconosciuto o generico, non posso aprire con app predefinita")
+    #                     self.label_info_file.set_markup('<span size="medium" color="#cc0000">Tipo file non riconosciuto, impossibile aprire automaticamente.</span>')
+    #             except Exception as e:
+    #                 self.label_info_file.set_markup(f'<span size="medium" color="#cc0000">Errore apertura file: {e}</span>')
+    #                 debug_print(f"[DEBUG] Eccezione in on_apri_estratto_clicked: {e}")
+    #         else:
+    #             debug_print(f"[DEBUG] File NON esiste: {self.file_estratto}")
+    #             self.label_info_file.set_markup(f'<span size="medium" color="#cc0000">Il file estratto non esiste: {self.file_estratto}</span>')
+    #     else:
+    #         debug_print("[DEBUG] file_estratto non impostato.")
+    #         self.label_info_file.set_markup('<span size="medium" color="#cc0000">Nessun file estratto da aprire.</span>')
 
 
 def main():
